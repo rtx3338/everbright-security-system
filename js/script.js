@@ -2,6 +2,16 @@ const menuButton = document.querySelector('.menu-toggle');
 const nav = document.querySelector('.nav');
 const dropdowns = document.querySelectorAll('.nav-dropdown');
 
+function updateArrow(button, open) {
+  if (!button) return;
+  const arrow = button.querySelector('span');
+  if (arrow) {
+    // Use explicit characters so the mobile state is always visually unambiguous.
+    arrow.textContent = open ? '▲' : '▼';
+    arrow.setAttribute('aria-hidden', 'true');
+  }
+}
+
 function setDropdownState(dropdown, open) {
   const button = dropdown.querySelector('.nav-dropbtn');
   const menu = dropdown.querySelector('.dropdown-menu');
@@ -10,9 +20,9 @@ function setDropdownState(dropdown, open) {
   if (button) {
     button.setAttribute('aria-expanded', String(open));
     button.classList.toggle('is-open', open);
+    updateArrow(button, open);
   }
 
-  // Inline display prevents desktop hover/focus CSS from overriding the mobile tap state.
   if (menu && window.innerWidth <= 900) {
     menu.style.setProperty('display', open ? 'block' : 'none', 'important');
   } else if (menu) {
@@ -44,26 +54,25 @@ if (menuButton && nav) {
     event.preventDefault();
     event.stopPropagation();
 
-    const open = !nav.classList.contains('open');
-
-    if (open) {
+    if (nav.classList.contains('open')) {
+      closeMobileMenu();
+    } else {
       nav.classList.add('open');
       menuButton.classList.add('is-open');
       menuButton.setAttribute('aria-expanded', 'true');
       menuButton.setAttribute('aria-label', 'Close menu');
-    } else {
-      closeMobileMenu();
     }
   });
 }
 
-// Mobile dropdowns: tap once to open (▼ becomes ▲), tap again to close.
+// Mobile dropdowns: ▼ when closed, ▲ when open.
 dropdowns.forEach((dropdown) => {
   const button = dropdown.querySelector('.nav-dropbtn');
   if (!button) return;
 
   button.setAttribute('aria-expanded', 'false');
   button.classList.remove('is-open');
+  updateArrow(button, false);
 
   button.addEventListener('click', (event) => {
     if (window.innerWidth > 900) return;
@@ -74,11 +83,12 @@ dropdowns.forEach((dropdown) => {
     const isOpen = dropdown.classList.contains('is-open');
     closeDropdowns();
 
-    if (!isOpen) setDropdownState(dropdown, true);
+    if (!isOpen) {
+      setDropdownState(dropdown, true);
+    }
   });
 });
 
-// Close the whole mobile menu when clicking outside the header.
 document.addEventListener('click', (event) => {
   if (window.innerWidth <= 900 && nav && nav.classList.contains('open')) {
     if (!event.target.closest('.site-header')) {
@@ -87,7 +97,6 @@ document.addEventListener('click', (event) => {
   }
 });
 
-// Close after selecting a normal navigation link.
 if (nav) {
   nav.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', () => {
