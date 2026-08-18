@@ -7,7 +7,10 @@ function setDropdownState(dropdown, open) {
   const menu = dropdown.querySelector('.dropdown-menu');
 
   dropdown.classList.toggle('is-open', open);
-  if (button) button.setAttribute('aria-expanded', String(open));
+  if (button) {
+    button.setAttribute('aria-expanded', String(open));
+    button.classList.toggle('is-open', open);
+  }
 
   // Inline display prevents desktop hover/focus CSS from overriding the mobile tap state.
   if (menu && window.innerWidth <= 900) {
@@ -28,8 +31,6 @@ function closeMobileMenu() {
   menuButton.classList.remove('is-open');
   menuButton.setAttribute('aria-expanded', 'false');
   menuButton.setAttribute('aria-label', 'Open menu');
-
-  // The icon is controlled by CSS; keep the button text empty.
   menuButton.textContent = '';
   closeDropdowns();
 }
@@ -56,12 +57,13 @@ if (menuButton && nav) {
   });
 }
 
-// Mobile dropdowns: tap once to open, tap again to close.
+// Mobile dropdowns: tap once to open (▼ becomes ▲), tap again to close.
 dropdowns.forEach((dropdown) => {
   const button = dropdown.querySelector('.nav-dropbtn');
   if (!button) return;
 
   button.setAttribute('aria-expanded', 'false');
+  button.classList.remove('is-open');
 
   button.addEventListener('click', (event) => {
     if (window.innerWidth > 900) return;
@@ -70,8 +72,6 @@ dropdowns.forEach((dropdown) => {
     event.stopPropagation();
 
     const isOpen = dropdown.classList.contains('is-open');
-
-    // Only one mobile dropdown stays open at a time.
     closeDropdowns();
 
     if (!isOpen) setDropdownState(dropdown, true);
