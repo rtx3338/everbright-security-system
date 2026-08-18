@@ -2,6 +2,25 @@ const menuButton = document.querySelector('.menu-toggle');
 const nav = document.querySelector('.nav');
 const dropdowns = document.querySelectorAll('.nav-dropdown');
 
+function setDropdownState(dropdown, open) {
+  const button = dropdown.querySelector('.nav-dropbtn');
+  const menu = dropdown.querySelector('.dropdown-menu');
+
+  dropdown.classList.toggle('is-open', open);
+  if (button) button.setAttribute('aria-expanded', String(open));
+
+  // Inline display prevents desktop hover/focus CSS from overriding the mobile tap state.
+  if (menu && window.innerWidth <= 900) {
+    menu.style.setProperty('display', open ? 'block' : 'none', 'important');
+  } else if (menu) {
+    menu.style.removeProperty('display');
+  }
+}
+
+function closeDropdowns() {
+  dropdowns.forEach((dropdown) => setDropdownState(dropdown, false));
+}
+
 function closeMobileMenu() {
   if (!menuButton || !nav) return;
 
@@ -9,20 +28,19 @@ function closeMobileMenu() {
   menuButton.classList.remove('is-open');
   menuButton.setAttribute('aria-expanded', 'false');
   menuButton.setAttribute('aria-label', 'Open menu');
-  menuButton.innerHTML = '<span aria-hidden="true">☰</span>';
 
-  dropdowns.forEach((dropdown) => {
-    dropdown.classList.remove('is-open');
-    const button = dropdown.querySelector('.nav-dropbtn');
-    if (button) button.setAttribute('aria-expanded', 'false');
-  });
+  // The icon is controlled by CSS; keep the button text empty.
+  menuButton.textContent = '';
+  closeDropdowns();
 }
 
 if (menuButton && nav) {
   menuButton.setAttribute('aria-expanded', 'false');
   menuButton.setAttribute('aria-label', 'Open menu');
+  menuButton.textContent = '';
 
   menuButton.addEventListener('click', (event) => {
+    event.preventDefault();
     event.stopPropagation();
 
     const open = !nav.classList.contains('open');
@@ -32,7 +50,6 @@ if (menuButton && nav) {
       menuButton.classList.add('is-open');
       menuButton.setAttribute('aria-expanded', 'true');
       menuButton.setAttribute('aria-label', 'Close menu');
-      menuButton.innerHTML = '<span aria-hidden="true">✕</span>';
     } else {
       closeMobileMenu();
     }
@@ -47,25 +64,21 @@ dropdowns.forEach((dropdown) => {
   button.setAttribute('aria-expanded', 'false');
 
   button.addEventListener('click', (event) => {
-    if (window.innerWidth <= 900) {
-      event.preventDefault();
-      event.stopPropagation();
+    if (window.innerWidth > 900) return;
 
-      const isOpen = dropdown.classList.toggle('is-open');
-      button.setAttribute('aria-expanded', String(isOpen));
+    event.preventDefault();
+    event.stopPropagation();
 
-      dropdowns.forEach((other) => {
-        if (other !== dropdown) {
-          other.classList.remove('is-open');
-          const otherButton = other.querySelector('.nav-dropbtn');
-          if (otherButton) otherButton.setAttribute('aria-expanded', 'false');
-        }
-      });
-    }
+    const isOpen = dropdown.classList.contains('is-open');
+
+    // Only one mobile dropdown stays open at a time.
+    closeDropdowns();
+
+    if (!isOpen) setDropdownState(dropdown, true);
   });
 });
 
-// Close when clicking anywhere outside the mobile header/menu.
+// Close the whole mobile menu when clicking outside the header.
 document.addEventListener('click', (event) => {
   if (window.innerWidth <= 900 && nav && nav.classList.contains('open')) {
     if (!event.target.closest('.site-header')) {
@@ -74,7 +87,7 @@ document.addEventListener('click', (event) => {
   }
 });
 
-// Close after selecting any normal navigation link on mobile.
+// Close after selecting a normal navigation link.
 if (nav) {
   nav.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', () => {
@@ -84,5 +97,13 @@ if (nav) {
 }
 
 window.addEventListener('resize', () => {
-  if (window.innerWidth > 900) closeMobileMenu();
+  if (window.innerWidth > 900) {
+    closeDropdowns();
+    if (nav) nav.classList.remove('open');
+    if (menuButton) {
+      menuButton.classList.remove('is-open');
+      menuButton.setAttribute('aria-expanded', 'false');
+      menuButton.setAttribute('aria-label', 'Open menu');
+    }
+  }
 });
